@@ -107,6 +107,7 @@
 
         .slider-custom {
             -webkit-appearance: none;
+            appearance: none;
             width: 100%;
             height: 4px;
             background: rgba(0, 0, 0, 0.4);
@@ -251,6 +252,8 @@
                     if (isNaN(duskEnd) || duskEnd <= sunset) duskEnd = Math.min(24, sunset + 1.5);
                     let dayStart = Math.min(sunrise + 1, noon - 0.5);
                     let dayEnd = Math.max(sunset - 0.5, noon + 0.5);
+                    const startColors = interpolateColors(currentHours);
+
                     colorStops = [
                         { h: 0, ...nightColors },
                         { h: dawnStart, ...nightColors },
@@ -263,11 +266,49 @@
                         { h: 24, ...nightColors }
                     ];
                     log(`Zsynchronizowano cykl dobowy: Wschód ${formatTime(sunrise)}, Zachód ${formatTime(sunset)}.`);
-                    updateEnvironment(currentHours);
+
+                    const targetColors = interpolateColors(currentHours);
+                    animateWeatherTransition(startColors, targetColors, 3000);
                 }
             } catch (e) {
                 log("Anomalia magiczna. Używam domyślnego cyklu słońca.");
             }
+        }
+
+        function animateWeatherTransition(start, target, duration) {
+            isAnimatingWeather = true;
+            const startTime = performance.now();
+
+            if (weatherAnimFrame) cancelAnimationFrame(weatherAnimFrame);
+
+            function step(timestamp) {
+                if (!isAnimatingWeather) return;
+
+                const elapsed = timestamp - startTime;
+                let progress = elapsed / duration;
+                if (progress > 1) progress = 1;
+
+                const easeInOut = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+
+                const currentC = {};
+                ['top', 'mid', 'bot', 'main', 'muted', 'sand'].forEach(key => {
+                    currentC[key] = [
+                        lerp(start[key][0], target[key][0], easeInOut),
+                        lerp(start[key][1], target[key][1], easeInOut),
+                        lerp(start[key][2], target[key][2], easeInOut)
+                    ];
+                });
+
+                updateEnvironment(currentHours, currentC);
+
+                if (progress < 1) {
+                    weatherAnimFrame = requestAnimationFrame(step);
+                } else {
+                    isAnimatingWeather = false;
+                    updateEnvironment(currentHours);
+                }
+            }
+            weatherAnimFrame = requestAnimationFrame(step);
         }
 
         function lerp(start, end, amt) {
@@ -296,8 +337,11 @@
             return colors;
         }
 
-        function updateEnvironment(hours) {
-            const colors = interpolateColors(hours);
+        let isAnimatingWeather = false;
+        let weatherAnimFrame = null;
+
+        function updateEnvironment(hours, colorsOverride = null) {
+            const colors = colorsOverride || interpolateColors(hours);
             const root = document.documentElement;
             root.style.setProperty('--bg-top', colors.top.join(','));
             root.style.setProperty('--bg-mid', colors.mid.join(','));
@@ -340,7 +384,9 @@
             const now = new Date();
             currentHours = now.getHours() + (now.getMinutes() / 60) + (now.getSeconds() / 3600);
             timeSlider.value = currentHours;
-            updateEnvironment(currentHours);
+            if (!isAnimatingWeather) {
+                updateEnvironment(currentHours);
+            }
         }
 
         timeSlider.addEventListener('input', (e) => {
@@ -348,6 +394,10 @@
                 isManualMode = true;
                 clearInterval(autoRefreshInterval);
                 log("Ręczna ingerencja w strumień czasu. Zatrzymano automatyczne odświeżanie.");
+            }
+            if (isAnimatingWeather) {
+                isAnimatingWeather = false;
+                if (weatherAnimFrame) cancelAnimationFrame(weatherAnimFrame);
             }
             currentHours = parseFloat(e.target.value);
             updateEnvironment(currentHours);
