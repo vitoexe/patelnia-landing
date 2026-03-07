@@ -11,12 +11,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Domyślne wartości (zostaną nadpisane przez JS) */
-            --bg-top: 212, 139, 89;
-            --bg-mid: 185, 106, 56;
-            --bg-bottom: 140, 65, 32;
-            --text-main: 255, 230, 204;
-            --text-muted: 255, 205, 163;
+            /* Domyślne wartości dla dnia */
+            --bg-top: 255, 235, 150;
+            --bg-mid: 225, 140, 55;
+            --bg-bottom: 165, 75, 30;
+            --text-main: 255, 240, 220;
+            --text-muted: 255, 215, 175;
         }
 
         body {
@@ -143,7 +143,7 @@
 <body>
 
     <!-- Panel kontroli czasu (Suwak) -->
-    <div class="time-control flex flex-col items-center">
+    <div class="time-control flex flex-col items-center" id="timeControl">
         <div class="flex items-center gap-3 mb-3">
             <div id="celestialIcon" class="text-main" style="filter: drop-shadow(0 0 8px currentColor); transition: all 0.3s ease;">
                 <!-- Słońce -->
@@ -172,7 +172,7 @@
     <canvas id="sandCanvas"></canvas>
 
     <div class="content-wrapper w-full">
-        <p class="text-[10px] md:text-sm tracking-[0.3em] uppercase mb-4 text-muted opacity-70 px-2">Witaj na krawędzi świata</p>
+        <p id="subtitleText" class="text-[10px] md:text-sm tracking-[0.3em] uppercase mb-4 text-muted px-2" style="opacity: 0.7;">Witaj na krawędzi świata</p>
 
         <h1 class="text-5xl sm:text-6xl md:text-8xl font-bold mb-6 heat-haze text-main drop-shadow-lg select-none px-1 break-words w-full max-w-[98vw]" id="mainTitle">
             patelnia.ovh
@@ -180,10 +180,10 @@
 
         <div class="w-16 md:w-24 h-[1px] bg-muted opacity-50 mb-6"></div>
 
-        <p class="text-base md:text-xl max-w-2xl font-light leading-relaxed text-main opacity-90 px-2">
+        <p id="mainDesc" class="text-base md:text-xl max-w-2xl font-light letext-main px-2" style="opacity: 0.9;">
             Bezkresne morze piasku, żar lejący się z nieba i fatamorgany.<br class="hidden md:block">
             Znalazłeś się w miejscu, gdzie przetrwają tylko nieliczni.
-            <span class="block mt-4 text-xs md:text-sm opacity-60 italic" id="dynamicText">Szukałeś oazy, ale tutaj słońce wypala nawet cień nadziei.</span>
+            <span class="block mt-4 text-xs md:text-sm italic" id="dynamicText">Szukałeś oazy, ale tutaj słońce wypala nawet cień nadziei.</span>
         </p>
     </div>
 
@@ -193,13 +193,13 @@
         // Funkcja do logowania wiadomości w konsoli z prefiksem
         const log = (message) => console.log('%c[vito.exe - DraggableNotification]', 'background: linear-gradient(to right, #6e00ff, #be00ff); color: white; font-weight: bold; padding: 2px 6px; border-radius: 4px; text-shadow: 0 0 4px black;', message);
 
-        log("Zainicjowano środowisko Pustyni Korath. Optymalizacja marginesów mobilnych.");
+        log("Korath Desert environment initialized. Mobile margins optimized.");
 
         const timeSlider = document.getElementById('timeSlider');
         const timeLabel = document.getElementById('timeLabel');
         const dynamicText = document.getElementById('dynamicText');
 
-        let currentSandColor = '255, 205, 163';
+        let currentSandColor = '180, 90, 35';
 
         const nightColors = { top: [5, 8, 20], mid: [11, 19, 43], bot: [2, 4, 10], main: [157, 178, 191], muted: [100, 130, 160], sand: [100, 130, 180] };
         const dawnColors = { top: [45, 32, 56], mid: [112, 66, 90], bot: [196, 121, 109], main: [255, 214, 201], muted: [255, 160, 140], sand: [255, 180, 150] };
@@ -226,89 +226,79 @@
             return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
         }
 
-        async function initRealWeather() {
-            try {
-                log("Pobieranie koordynatów z IP w celu ustalenia pozycji słońca...");
-                const geoRes = await fetch('https://get.geojs.io/v1/ip/geo.json');
-                const geoData = await geoRes.json();
-                const { latitude, longitude, city } = geoData;
+        function initSolarCycle() {
+            log("Determining astronomical parameters for fixed position (Warsaw)...");
 
-                log(`Lokalizacja zidentyfikowana: ${city}. Wyliczanie parametrów astronomicznych...`);
+            function getWarsawSolarTimes(date) {
+                const lat = 52.2297;
+                const lng = 21.0122;
+                const rad = Math.PI / 180;
 
-                const sunRes = await fetch(`https://api.sunrise-sunset.org/json?lat=${latitude}&lng=${longitude}&formatted=0`);
-                const sunData = await sunRes.json();
+                const start = new Date(Date.UTC(date.getFullYear(), 0, 0));
+                const today = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                const dayOfYear = (today - start) / 86400000;
 
-                if (sunData.status === "OK") {
-                    const getLocalDecimalHour = (isoString) => {
-                        const d = new Date(isoString);
-                        return d.getHours() + d.getMinutes() / 60;
-                    };
-                    const sunrise = getLocalDecimalHour(sunData.results.sunrise);
-                    const sunset = getLocalDecimalHour(sunData.results.sunset);
-                    const noon = getLocalDecimalHour(sunData.results.solar_noon);
-                    let dawnStart = getLocalDecimalHour(sunData.results.astronomical_twilight_begin);
-                    let duskEnd = getLocalDecimalHour(sunData.results.astronomical_twilight_end);
-                    if (isNaN(dawnStart) || dawnStart >= sunrise) dawnStart = Math.max(0, sunrise - 1.5);
-                    if (isNaN(duskEnd) || duskEnd <= sunset) duskEnd = Math.min(24, sunset + 1.5);
-                    let dayStart = Math.min(sunrise + 1, noon - 0.5);
-                    let dayEnd = Math.max(sunset - 0.5, noon + 0.5);
-                    const startColors = interpolateColors(currentHours);
+                const b = (360 / 365) * (dayOfYear - 81) * rad;
+                const eot = 9.87 * Math.sin(2 * b) - 7.53 * Math.cos(b) - 1.5 * Math.sin(b);
+                const tc = 4 * lng + eot;
+                const decl = 23.45 * Math.sin((360 / 365) * (dayOfYear - 81) * rad) * rad;
 
-                    colorStops = [
-                        { h: 0, ...nightColors },
-                        { h: dawnStart, ...nightColors },
-                        { h: sunrise, ...dawnColors },
-                        { h: dayStart, ...dayColors },
-                        { h: noon, ...dayColors },
-                        { h: dayEnd, ...dayColors },
-                        { h: sunset, ...duskColors },
-                        { h: duskEnd, ...nightColors },
-                        { h: 24, ...nightColors }
-                    ];
-                    log(`Zsynchronizowano cykl dobowy: Wschód ${formatTime(sunrise)}, Zachód ${formatTime(sunset)}.`);
+                const calcHourAngle = (angleDeg) => {
+                    const hArg = (Math.sin(angleDeg * rad) - Math.sin(lat * rad) * Math.sin(decl)) / (Math.cos(lat * rad) * Math.cos(decl));
+                    return Math.acos(Math.max(-1, Math.min(1, hArg))) / rad;
+                };
 
-                    const targetColors = interpolateColors(currentHours);
-                    animateWeatherTransition(startColors, targetColors, 3000);
-                }
-            } catch (e) {
-                log("Anomalia magiczna. Używam domyślnego cyklu słońca.");
+                const noonUtc = 12 - (tc / 60);
+                const haSunrise = calcHourAngle(-0.833) / 15;
+                const haTwilight = calcHourAngle(-18) / 15;
+
+                const toLocalHour = (utcHours) => {
+                    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), Math.floor(utcHours), Math.floor((utcHours % 1) * 60)));
+                    return d.getHours() + d.getMinutes() / 60;
+                };
+
+                return {
+                    dawnStart: toLocalHour(noonUtc - haTwilight),
+                    sunrise: toLocalHour(noonUtc - haSunrise),
+                    noon: toLocalHour(noonUtc),
+                    sunset: toLocalHour(noonUtc + haSunrise),
+                    duskEnd: toLocalHour(noonUtc + haTwilight)
+                };
             }
-        }
 
-        function animateWeatherTransition(start, target, duration) {
-            isAnimatingWeather = true;
-            const startTime = performance.now();
+            const now = new Date();
+            const solar = getWarsawSolarTimes(now);
 
-            if (weatherAnimFrame) cancelAnimationFrame(weatherAnimFrame);
+            let dawnStart = solar.dawnStart;
+            let sunrise = solar.sunrise;
+            let noon = solar.noon;
+            let sunset = solar.sunset;
+            let duskEnd = solar.duskEnd;
 
-            function step(timestamp) {
-                if (!isAnimatingWeather) return;
+            if (isNaN(dawnStart) || dawnStart >= sunrise) dawnStart = Math.max(0, sunrise - 1.5);
+            if (isNaN(duskEnd) || duskEnd <= sunset) duskEnd = Math.min(24, sunset + 1.5);
+            let dayStart = Math.min(sunrise + 1, noon - 0.5);
+            let dayEnd = Math.max(sunset - 0.5, noon + 0.5);
 
-                const elapsed = timestamp - startTime;
-                let progress = elapsed / duration;
-                if (progress > 1) progress = 1;
+            colorStops = [
+                { h: 0, ...nightColors },
+                { h: dawnStart, ...nightColors },
+                { h: sunrise, ...dawnColors },
+                { h: dayStart, ...dayColors },
+                { h: noon, ...dayColors },
+                { h: dayEnd, ...dayColors },
+                { h: sunset, ...duskColors },
+                { h: duskEnd, ...nightColors },
+                { h: 24, ...nightColors }
+            ];
 
-                const easeInOut = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+            log(`Diurnal cycle synchronized (Warsaw): Sunrise ${formatTime(sunrise)}, Sunset ${formatTime(sunset)}.`);
 
-                const currentC = {};
-                ['top', 'mid', 'bot', 'main', 'muted', 'sand'].forEach(key => {
-                    currentC[key] = [
-                        lerp(start[key][0], target[key][0], easeInOut),
-                        lerp(start[key][1], target[key][1], easeInOut),
-                        lerp(start[key][2], target[key][2], easeInOut)
-                    ];
-                });
+            const currentNow = new Date();
+            currentHours = currentNow.getHours() + (currentNow.getMinutes() / 60) + (currentNow.getSeconds() / 3600);
+            timeSlider.value = currentHours;
 
-                updateEnvironment(currentHours, currentC);
-
-                if (progress < 1) {
-                    weatherAnimFrame = requestAnimationFrame(step);
-                } else {
-                    isAnimatingWeather = false;
-                    updateEnvironment(currentHours);
-                }
-            }
-            weatherAnimFrame = requestAnimationFrame(step);
+            updateEnvironment(currentHours);
         }
 
         function lerp(start, end, amt) {
@@ -337,11 +327,8 @@
             return colors;
         }
 
-        let isAnimatingWeather = false;
-        let weatherAnimFrame = null;
-
-        function updateEnvironment(hours, colorsOverride = null) {
-            const colors = colorsOverride || interpolateColors(hours);
+        function updateEnvironment(hours) {
+            const colors = interpolateColors(hours);
             const root = document.documentElement;
             root.style.setProperty('--bg-top', colors.top.join(','));
             root.style.setProperty('--bg-mid', colors.mid.join(','));
@@ -349,6 +336,7 @@
             root.style.setProperty('--text-main', colors.main.join(','));
             root.style.setProperty('--text-muted', colors.muted.join(','));
             currentSandColor = colors.sand.join(',');
+
             timeLabel.textContent = `Czas: ${formatTime(hours)}`;
             const dawnStartH = colorStops[1].h;
             const sunriseH = colorStops[2].h;
@@ -384,20 +372,14 @@
             const now = new Date();
             currentHours = now.getHours() + (now.getMinutes() / 60) + (now.getSeconds() / 3600);
             timeSlider.value = currentHours;
-            if (!isAnimatingWeather) {
-                updateEnvironment(currentHours);
-            }
+            updateEnvironment(currentHours);
         }
 
         timeSlider.addEventListener('input', (e) => {
             if (!isManualMode) {
                 isManualMode = true;
                 clearInterval(autoRefreshInterval);
-                log("Ręczna ingerencja w strumień czasu. Zatrzymano automatyczne odświeżanie.");
-            }
-            if (isAnimatingWeather) {
-                isAnimatingWeather = false;
-                if (weatherAnimFrame) cancelAnimationFrame(weatherAnimFrame);
+                log("Manual interference in time stream. Automatic refresh stopped.");
             }
             currentHours = parseFloat(e.target.value);
             updateEnvironment(currentHours);
@@ -439,20 +421,9 @@
                     this.y = Math.random() * height;
                 }
             }
-            draw() {
+            draw(nightFactor) {
                 let finalOpacity = this.opacity;
-                const dawnStartH = colorStops[1].h;
-                const sunriseH = colorStops[2].h;
-                const sunsetH = colorStops[6].h;
-                const duskEndH = colorStops[7].h;
-                let nightFactor = 0;
-                if (currentHours >= duskEndH || currentHours <= dawnStartH) {
-                    nightFactor = 1;
-                } else if (currentHours > sunsetH && currentHours < duskEndH) {
-                    nightFactor = (currentHours - sunsetH) / (duskEndH - sunsetH);
-                } else if (currentHours > dawnStartH && currentHours < sunriseH) {
-                    nightFactor = 1 - ((currentHours - dawnStartH) / (sunriseH - dawnStartH));
-                }
+
                 const fadeStart = height * 0.75;
                 if (this.y > fadeStart) {
                     const depth = (this.y - fadeStart) / (height - fadeStart);
@@ -473,15 +444,31 @@
 
         function animate() {
             ctx.clearRect(0, 0, width, height);
+
+            // Oblicz zmienną nightFactor raz na klatkę dla wszystkich cząsteczek
+            const dawnStartH = colorStops[1].h;
+            const sunriseH = colorStops[2].h;
+            const sunsetH = colorStops[6].h;
+            const duskEndH = colorStops[7].h;
+
+            let nightFactor = 0;
+            if (currentHours >= duskEndH || currentHours <= dawnStartH) {
+                nightFactor = 1;
+            } else if (currentHours > sunsetH && currentHours < duskEndH) {
+                nightFactor = (currentHours - sunsetH) / (duskEndH - sunsetH);
+            } else if (currentHours > dawnStartH && currentHours < sunriseH) {
+                nightFactor = 1 - ((currentHours - dawnStartH) / (sunriseH - dawnStartH));
+            }
+
             particles.forEach(p => {
                 p.update();
-                p.draw();
+                p.draw(nightFactor);
             });
             requestAnimationFrame(animate);
         }
         animate();
         syncRealTime();
-        initRealWeather();
+        initSolarCycle();
     </script>
 </body>
 
