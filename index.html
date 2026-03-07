@@ -142,8 +142,8 @@
     <div class="time-control flex flex-col items-center" id="timeControl">
         <div class="flex items-center gap-3 mb-3">
             <div id="celestialIcon" class="text-main" style="filter: drop-shadow(0 0 8px currentColor); transition: all 0.3s ease;">
-                <!-- Słońce -->
-                <svg id="iconSun" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+                <!-- Słońce/Księżyc (ikony bez zmian) -->
+                <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden">
                     <circle cx="12" cy="12" r="5"></circle>
                     <line x1="12" y1="1" x2="12" y2="3"></line>
                     <line x1="12" y1="21" x2="12" y2="23"></line>
@@ -154,14 +154,14 @@
                     <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
                     <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
                 </svg>
-                <!-- Księżyc -->
-                <svg id="iconMoon" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="hidden">
+                <svg id="iconMoon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="hidden">
                     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                 </svg>
             </div>
-            <label for="timeSlider" class="text-muted witcher-font text-xs uppercase tracking-[0.2em] font-bold m-0" id="timeLabel">Czas: --:--</label>
+            <span class="text-main witcher-font text-lg font-bold tracking-widest" id="timeLabel">--:--</span>
         </div>
         <input type="range" id="timeSlider" min="0" max="23.99" step="any" class="slider-custom">
+        <label for="timeSlider" class="text-muted witcher-font text-[13px] uppercase tracking-[0.4em] font-bold mt-2">WARSZAWA</label>
     </div>
 
     <!-- Canvas dla efektu piasku -->
@@ -333,7 +333,7 @@
             root.style.setProperty('--text-muted', colors.muted.join(','));
             currentSandColor = colors.sand.join(',');
 
-            timeLabel.textContent = `Czas: ${formatTime(hours)}`;
+            timeLabel.textContent = formatTime(hours);
             const dawnStartH = colorStops[1].h;
             const sunriseH = colorStops[2].h;
             const sunsetH = colorStops[6].h;
