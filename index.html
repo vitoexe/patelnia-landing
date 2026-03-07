@@ -21,15 +21,31 @@
             --text-muted: 255, 215, 175;
         }
 
+        html {
+            background-color: rgb(var(--bg-top));
+        }
+
         body {
             margin: 0;
-            overflow: hidden;
-            background: linear-gradient(to bottom, rgb(var(--bg-top)), rgb(var(--bg-mid)), rgb(var(--bg-bottom)));
+            overflow-x: hidden;
             font-family: 'Montserrat', sans-serif;
             color: rgb(var(--text-main));
-            transition: background 0.1s ease;
             user-select: none;
             /* Zapobiega zaznaczaniu tekstu podczas przeciągania słońca */
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            background: linear-gradient(to bottom, rgb(var(--bg-top)), rgb(var(--bg-mid)), rgb(var(--bg-bottom)));
+            z-index: -1;
+            transition: background 0.1s ease;
+            pointer-events: none;
         }
 
         h1,
@@ -51,11 +67,12 @@
         }
 
         #sandCanvas {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
+            height: 100vh;
+            height: 100dvh;
             z-index: 1;
             pointer-events: none;
         }
@@ -63,13 +80,14 @@
         .content-wrapper {
             position: relative;
             z-index: 10;
-            height: 100vh;
+            min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             text-align: center;
-            padding: 1rem;
+            padding: 5rem 1rem 2rem 1rem;
             background: radial-gradient(circle, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.4) 100%);
         }
 
@@ -171,13 +189,13 @@
     <div class="content-wrapper w-full">
         <p id="subtitleText" class="text-[10px] md:text-sm tracking-[0.3em] uppercase mb-4 text-muted px-2" style="opacity: 0.7;">Witaj na krawędzi świata</p>
 
-        <h1 class="text-6xl sm:text-7xl md:text-8xl font-bold mb-6 heat-haze text-main drop-shadow-lg select-none px-1 break-words w-full max-w-[98vw]" id="mainTitle">
-            <span class="text-nowrap">patelnia.</span><span class="text-nowrap">ovh</span>
+        <h1 class="text-6xl sm:text-6xl md:text-8xl font-bold mb-6 heat-haze text-main drop-shadow-lg select-none px-4 break-words w-full" id="mainTitle">
+            patelnia.ovh
         </h1>
 
         <div class="w-16 md:w-24 h-[1px] bg-muted opacity-50 mb-6"></div>
 
-        <p id="mainDesc" class="text-base md:text-xl max-w-2xl font-light letext-main px-2" style="opacity: 0.9;">
+        <p id="mainDesc" class="text-base md:text-xl max-w-2xl font-light text-main px-2" style="opacity: 0.9;">
             Bezkresne morze piasku, żar lejący się z nieba i fatamorgany.<br class="hidden md:block">
             Znalazłeś się w miejscu, gdzie przetrwają tylko nieliczni.
             <span class="block mt-4 text-xs md:text-sm italic" id="dynamicText">Szukałeś oazy, ale tutaj słońce wypala nawet cień nadziei.</span>
